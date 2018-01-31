@@ -35,8 +35,12 @@ import com.firebase.ui.auth.ui.AppCompatBase;
 import com.firebase.ui.auth.ui.HelperActivityBase;
 import com.firebase.ui.auth.util.ExtraConstants;
 import com.firebase.ui.auth.util.FirebaseAuthError;
+import com.firebase.ui.auth.util.accountcheck.ManualCheckService;
+import com.firebase.ui.auth.util.accountcheck.ManualCheckUtils;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -73,6 +77,7 @@ public class PhoneActivity extends AppCompatBase {
     private Boolean mIsDestroyed = false;
     private PhoneAuthProvider.ForceResendingToken mForceResendingToken;
     private VerificationState mVerificationState;
+    private Class<? extends ManualCheckService> listener;
 
     public static Intent createIntent(Context context, FlowParameters flowParams, Bundle params) {
         return HelperActivityBase.createBaseIntent(
@@ -97,6 +102,7 @@ public class PhoneActivity extends AppCompatBase {
         }
 
         Bundle params = getIntent().getExtras().getBundle(ExtraConstants.EXTRA_PARAMS);
+        listener = (Class<? extends ManualCheckService>) params.getSerializable(ExtraConstants.EXTRA_CHECK_LISTNER);
         VerifyPhoneNumberFragment fragment = VerifyPhoneNumberFragment.newInstance
                 (getFlowParams(), params);
         getSupportFragmentManager().beginTransaction()
@@ -150,6 +156,20 @@ public class PhoneActivity extends AppCompatBase {
     }
 
     void verifyPhoneNumber(String phoneNumber, boolean forceResend) {
+        showLoadingDialog("checking...");
+        ManualCheckUtils.isAnExistingUser(getApplicationContext(), mPhoneNumber, listener)
+                .addOnCompleteListener(new OnCompleteListener<Boolean>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Boolean> task) {
+                        if (task.isSuccessful()){
+                            completeLoadingDialog("");
+                            if (!task.getResult()){
+                                showAlertDialog("You are not registered with us. Please register.", null);
+                                return;
+                            }
+                        }
+                    }
+                });
         sendCode(phoneNumber, forceResend);
         if (forceResend) {
             showLoadingDialog(getString(R.string.fui_resending));

@@ -36,6 +36,7 @@ import com.firebase.ui.auth.ui.idp.AuthMethodPickerActivity;
 import com.firebase.ui.auth.util.ExtraConstants;
 import com.firebase.ui.auth.util.GoogleApiUtils;
 import com.firebase.ui.auth.util.Preconditions;
+import com.firebase.ui.auth.util.accountcheck.ManualCheckService;
 import com.firebase.ui.auth.util.data.PhoneNumberUtils;
 import com.firebase.ui.auth.util.data.ProviderUtils;
 import com.google.android.gms.auth.api.credentials.Credential;
@@ -625,6 +626,18 @@ public class AuthUI {
             public PhoneBuilder() {
                 //noinspection deprecation taking a hit for the backcompat team
                 super(PhoneAuthProvider.PROVIDER_ID);
+            }
+
+            /**
+             * Enables or disables creating new accounts in the phone sign in flow.
+             * <p>
+             * Account creation is enabled by default.
+             */
+            @NonNull
+            public PhoneBuilder setAllowNewAccounts(boolean allow, Class<? extends ManualCheckService> listner) {
+                getParams().putBoolean(ExtraConstants.EXTRA_ALLOW_NEW_PHONES, allow);
+                getParams().putSerializable(ExtraConstants.EXTRA_CHECK_LISTNER, listner);
+                return this;
             }
 
             /**
